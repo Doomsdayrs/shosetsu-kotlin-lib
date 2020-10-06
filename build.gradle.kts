@@ -38,7 +38,6 @@ dependencies {
 	implementation("com.google.guava:guava:28.0-jre")
 	testImplementation("junit:junit:4.12")
 	compile("com.github.Mimerme:KtsRunner:0.0.8")
-//	implementation("org.jetbrains.kolin:kotlin-test:v1.3.61")
-	implementation(kotlin("script-runtime"))
+	implementation(kotlin("script-runtime","1.4.10"))
 }
 
