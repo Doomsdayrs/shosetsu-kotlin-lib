@@ -1,5 +1,6 @@
 package app.shosetsu.lib
 
+import app.shosetsu.lib.Test.ScriptType.*
 import app.shosetsu.lib.kts.KtsExtension
 import app.shosetsu.lib.lua.LuaExtension
 import app.shosetsu.lib.lua.ShosetsuLuaLib
@@ -45,7 +46,7 @@ object Test {
 			//"en/BestLightNovel",
 			//"en/BoxNovel",
 			//"en/CreativeNovels",
-			//"en/FastNovel", -- line 54, nil
+			"en/FastNovel" to LUA, //-- line 54, nil
 			//"en/Foxaholic", //Needs to use ajax to get chapters, Investigate `action=manga_get_chapters&manga=######`
 			//"en/KissLightNovels",
 			//"en/MNovelFree", //Doesn't seem to be a novelfull
@@ -61,7 +62,7 @@ object Test {
 			//"pt/SaikaiScan", -- Removed search query
 			//"zn/15doc",
 			//"zn/Tangsanshu"
-			"en/FastNovel" to ScriptType.KTS
+			//"en/FastNovel" to KTS
 	).map {
 		"src/main/resources/src/${it.first}.${it.second.name.toLowerCase()}" to it.second
 	}
@@ -140,16 +141,20 @@ object Test {
 
 			for ((format, type) in SOURCES) {
 				println("\n\n========== $format ==========")
+				val startTime = System.currentTimeMillis()
 
 				val formatter: IExtension = when (type) {
-					ScriptType.KTS -> KtsExtension(File(format))
-					ScriptType.LUA -> LuaExtension(File(format))
+					KTS -> KtsExtension(File(format))
+					LUA -> LuaExtension(File(format))
 				}
 
 				val settingsModel: Map<Int, *> = formatter.settingsModel.also {
 					println("Settings model:")
 					it.printOut()
 				}.mapify()
+
+				println(System.currentTimeMillis() - startTime)
+
 				val searchFiltersModel: Map<Int, *> = formatter.searchFiltersModel.also {
 					println("SearchFilters Model:")
 					it.printOut()

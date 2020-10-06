@@ -1,9 +1,8 @@
 import app.shosetsu.lib.*
 import app.shosetsu.lib.kts.ShosetsuKtsLib
-
 import org.json.JSONObject
-object : IExtension {
 
+object : IExtension {
 	override val name: String = "FastNovel"
 	override val baseURL: String = "https://fastnovel.net"
 	override val imageURL: String = "https://fastnovel.net/skin/images/logo.png"

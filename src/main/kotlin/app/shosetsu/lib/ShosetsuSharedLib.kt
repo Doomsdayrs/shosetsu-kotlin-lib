@@ -1,7 +1,6 @@
 package app.shosetsu.lib
 
 import okhttp3.OkHttpClient
-import org.jsoup.nodes.Document
 
 /**
  * shosetsu-kotlin-lib
@@ -10,6 +9,4 @@ import org.jsoup.nodes.Document
 object ShosetsuSharedLib {
 	/** okhttp HTTP Client used by lib functions. */
 	lateinit var httpClient: OkHttpClient
-
-
 }

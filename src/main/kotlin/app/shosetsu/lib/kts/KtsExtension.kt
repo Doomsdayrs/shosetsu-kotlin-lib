@@ -23,11 +23,7 @@ class KtsExtension(private val content: String) : IExtension {
 		).map { it.qualifiedName }
 	}
 
-	private val iExtension: IExtension;
-
-	constructor(file: File) : this(file.readText())
-
-	init {
+	private val iExtension: IExtension by lazy {
 		content
 				.split("\n")
 				.filter { it.length > 5 && it.substring(0..5) == "import" }
@@ -36,13 +32,13 @@ class KtsExtension(private val content: String) : IExtension {
 					if (acceptedImports.any { it == packageName }) return@forEach
 					throw IllegalAccessException("KTS Attempting to access out of spec library: `$packageName`")
 				}
-
-		iExtension = KtsObjectLoader().load(content)
+		KtsObjectLoader().load(content)
 	}
+
+	constructor(file: File) : this(file.readText())
 
 	override val metaData: JSONObject
 		get() = iExtension.metaData
-
 
 	override val name: String
 		get() = iExtension.name
