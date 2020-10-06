@@ -13,7 +13,6 @@ import org.luaj.vm2.lib.jse.CoerceJavaToLua
 import org.luaj.vm2.lib.jse.CoerceLuaToJava
 import java.util.concurrent.TimeUnit
 
-
 /*
  * This file is part of shosetsu-services.
  * shosetsu-services is free software: you can redistribute it and/or modify
@@ -42,6 +41,7 @@ class ShosetsuLuaLib : TwoArgFunction() {
 		g.getmetatable()["__index"] = __index(g)
 		return g
 	}
+
 
 	@Suppress("unused", "PrivatePropertyName", "FunctionName", "MemberVisibilityCanBePrivate")
 	internal class LibFunctions {
@@ -134,7 +134,7 @@ class ShosetsuLuaLib : TwoArgFunction() {
 
 
 		fun Document(str: String): Document = Jsoup.parse(str)!!
-		fun Request(req: Request): Response = httpClient.newCall(req).execute()
+		fun Request(req: Request): Response = ShosetsuSharedLib.httpClient.newCall(req).execute()
 		fun RequestDocument(req: Request): Document = Document(
 				Request(req).let { r ->
 					r.takeIf { it.code == 200 }?.body?.string() ?: {
@@ -147,7 +147,7 @@ class ShosetsuLuaLib : TwoArgFunction() {
 		fun GETDocument(url: String): Document = RequestDocument(_GET(url, DEFAULT_HEADERS(), DEFAULT_CACHE_CONTROL()))
 
 		// For advanced users who want to (or need to) do everything themselves.
-		fun HttpClient(): OkHttpClient = httpClient
+		fun HttpClient(): OkHttpClient = ShosetsuSharedLib.httpClient
 
 		fun RequestBuilder(): Request.Builder = Request.Builder()
 		fun HeadersBuilder(): Headers.Builder = Headers.Builder()
@@ -184,11 +184,15 @@ class ShosetsuLuaLib : TwoArgFunction() {
 		/** Libraries loaded in via shosetsu. Mapping from library name to their returned value. */
 		val libraries: MutableMap<String, LuaValue> = mutableMapOf()
 
+		@Deprecated("Use ShosetsuSharedLib")
+		var httpClient: OkHttpClient
+			set(value){
+				ShosetsuSharedLib.httpClient = value
+			}
+			get() = ShosetsuSharedLib.httpClient
+
 		/** Loads libraries from their names. */
 		lateinit var libLoader: (name: String) -> LuaValue?
-
-		/** okhttp HTTP Client used by lib functions. */
-		lateinit var httpClient: OkHttpClient
 
 		private val permaLuaFuncs by lazy {
 			mapOf(

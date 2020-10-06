@@ -1,5 +1,7 @@
 package app.shosetsu.lib
 
+import org.json.JSONObject
+
 /*
  * This file is part of shosetsu-services.
  * shosetsu-services is free software: you can redistribute it and/or modify
@@ -30,6 +32,8 @@ interface IExtension {
 		/** Novel url key for [expandURL] & [shrinkURL]*/
 		const val KEY_NOVEL_URL: Int = 1
 	}
+
+	val metaData: JSONObject
 
 	/**
 	 * This represents a "Page" that the source might have for listing novels
@@ -75,7 +79,7 @@ interface IExtension {
 	val hasSearch: Boolean
 
 	/** If this extensions search can be incremented */
-	val isSearchIncrementing:Boolean
+	val isSearchIncrementing: Boolean
 
 	/** If this extension has cloudflare protection that requires interception */
 	val hasCloudFlare: Boolean
@@ -123,7 +127,7 @@ interface IExtension {
 	 * @param loadChapters option to load chapters or not, for minor performance options (and debug)
 	 * @param reporter Way to print out debug to log
 	 */
-	fun parseNovel(novelURL: String, loadChapters: Boolean, reporter: (status: String) -> Unit): Novel.Info
+	fun parseNovel(novelURL: String, loadChapters: Boolean): Novel.Info
 
 	/**
 	 *  @param smallURL URL to enlarge

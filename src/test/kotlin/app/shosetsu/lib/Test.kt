@@ -1,5 +1,6 @@
 package app.shosetsu.lib
 
+import app.shosetsu.lib.kts.KtsExtension
 import app.shosetsu.lib.lua.LuaExtension
 import app.shosetsu.lib.lua.ShosetsuLuaLib
 import okhttp3.OkHttpClient
@@ -30,6 +31,8 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
  * In IDEA, The Classpath should be shosetsu-services but the Working directory should be shosetsu-extensions.
  */
 object Test {
+	private enum class ScriptType { LUA, KTS }
+
 	// CONFIG
 	private const val SEARCH_VALUE = "world"
 	private const val PRINT_LISTINGS = true
@@ -38,7 +41,7 @@ object Test {
 	private const val PRINT_NOVEL_STATS = true
 	private const val PRINT_PASSAGES = true
 
-	private val SOURCES: List<String> = arrayOf(
+	private val SOURCES: List<Pair<String, ScriptType>> = arrayOf<Pair<String, ScriptType>>(
 			//"en/BestLightNovel",
 			//"en/BoxNovel",
 			//"en/CreativeNovels",
@@ -58,7 +61,10 @@ object Test {
 			//"pt/SaikaiScan", -- Removed search query
 			//"zn/15doc",
 			//"zn/Tangsanshu"
-	).map { "src/main/resources/src/$it.lua" }
+			"en/FastNovel" to ScriptType.KTS
+	).map {
+		"src/main/resources/src/${it.first}.${it.second.name.toLowerCase()}" to it.second
+	}
 
 	private val REPORTER: (String) -> Unit = { println("Progress: $it") }
 	// END CONFIG
@@ -85,7 +91,7 @@ object Test {
 
 		println()
 
-		val novel = fmt.parseNovel(novels[0].link, true, REPORTER)
+		val novel = fmt.parseNovel(novels[0].link, true)
 		if (PRINT_NOVELS) println(novel)
 		if (PRINT_NOVEL_STATS) println("${novel.title} - ${novel.chapters.size} chapters.")
 
@@ -128,14 +134,18 @@ object Test {
 	fun main(args: Array<String>) {
 		try {
 			ShosetsuLuaLib.libLoader = { loadScript(File("src/main/resources/lib/$it.lua")) }
-			ShosetsuLuaLib.httpClient = OkHttpClient.Builder().addInterceptor {
+			ShosetsuSharedLib.httpClient = OkHttpClient.Builder().addInterceptor {
 				it.proceed(it.request().also { request -> println(request.url.toUrl().toString()) })
 			}.build()
 
-			for (format in SOURCES) {
+			for ((format, type) in SOURCES) {
 				println("\n\n========== $format ==========")
 
-				val formatter = LuaExtension(File(format))
+				val formatter: IExtension = when (type) {
+					ScriptType.KTS -> KtsExtension(File(format))
+					ScriptType.LUA -> LuaExtension(File(format))
+				}
+
 				val settingsModel: Map<Int, *> = formatter.settingsModel.also {
 					println("Settings model:")
 					it.printOut()
