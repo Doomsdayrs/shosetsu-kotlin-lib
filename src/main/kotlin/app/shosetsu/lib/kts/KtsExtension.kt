@@ -9,30 +9,44 @@ import org.json.JSONObject
 import org.jsoup.nodes.Document
 import java.io.File
 import kotlin.reflect.KClass
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 /**
  * shosetsu-services
  * 06 / 10 / 2020
  */
+@ExperimentalTime
 class KtsExtension(private val content: String) : IExtension {
 	companion object {
 		private val acceptedImports: List<String?> = arrayOf<KClass<*>>(
-				JSONObject::class,
-				JSONArray::class,
-				Document::class
+			JSONObject::class,
+			JSONArray::class,
+			Document::class
 		).map { it.qualifiedName }
 	}
 
-	private val iExtension: IExtension by lazy {
+	private fun validate(content: String) {
 		content
-				.split("\n")
-				.filter { it.length > 5 && it.substring(0..5) == "import" }
-				.map { it.removePrefix("import ") }
-				.filterNot { it.startsWith("app.shosetsu.lib") }.forEach { packageName ->
-					if (acceptedImports.any { it == packageName }) return@forEach
-					throw IllegalAccessException("KTS Attempting to access out of spec library: `$packageName`")
-				}
-		KtsObjectLoader().load(content)
+			.split("\n")
+			.filter { it.length > 5 && it.substring(0..5) == "import" }
+			.map { it.removePrefix("import ") }
+			.filterNot { it.startsWith("app.shosetsu.lib") }
+			.forEach { packageName ->
+				if (acceptedImports.any { it == packageName }) return@forEach
+				throw IllegalAccessException("KTS Attempting to access out of spec library: `$packageName`")
+			}
+	}
+
+	private val iExtension: IExtension by lazy {
+		validate(content)
+		measureTimedValue {
+			KtsObjectLoader().load<IExtension>(
+				content
+			)
+		}.also {
+			println("It took ${it.duration.inMilliseconds}ms to process")
+		}.value
 	}
 
 	constructor(file: File) : this(file.readText())
@@ -74,20 +88,23 @@ class KtsExtension(private val content: String) : IExtension {
 		get() = iExtension.chapterType
 
 	override fun updateSetting(id: Int, value: Any?) =
-			iExtension.updateSetting(id, value)
+		iExtension.updateSetting(id, value)
 
 	override fun search(data: Map<Int, *>): Array<Novel.Listing> =
-			iExtension.search(data)
+		iExtension.search(data)
 
 	override fun getPassage(chapterURL: String): String =
-			iExtension.getPassage(chapterURL)
+		iExtension.getPassage(chapterURL)
 
-	override fun parseNovel(novelURL: String, loadChapters: Boolean): Novel.Info =
-			iExtension.parseNovel(novelURL, loadChapters)
+	override fun parseNovel(
+		novelURL: String,
+		loadChapters: Boolean
+	): Novel.Info =
+		iExtension.parseNovel(novelURL, loadChapters)
 
 	override fun expandURL(smallURL: String, type: Int): String =
-			iExtension.expandURL(smallURL, type)
+		iExtension.expandURL(smallURL, type)
 
 	override fun shrinkURL(longURL: String, type: Int): String =
-			iExtension.shrinkURL(longURL, type)
+		iExtension.shrinkURL(longURL, type)
 }

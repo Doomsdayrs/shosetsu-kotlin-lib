@@ -1,6 +1,7 @@
 package app.shosetsu.lib
 
-import app.shosetsu.lib.Test.ScriptType.*
+import app.shosetsu.lib.Test.ScriptType.KTS
+import app.shosetsu.lib.Test.ScriptType.LUA
 import app.shosetsu.lib.kts.KtsExtension
 import app.shosetsu.lib.lua.LuaExtension
 import app.shosetsu.lib.lua.ShosetsuLuaLib
@@ -8,6 +9,7 @@ import okhttp3.OkHttpClient
 import org.luaj.vm2.LuaValue
 import java.io.File
 import java.util.concurrent.TimeUnit.MILLISECONDS
+import kotlin.time.ExperimentalTime
 
 /*
  * This file is part of shosetsu-services.
@@ -43,26 +45,26 @@ object Test {
 	private const val PRINT_PASSAGES = true
 
 	private val SOURCES: List<Pair<String, ScriptType>> = arrayOf<Pair<String, ScriptType>>(
-			//"en/BestLightNovel",
-			//"en/BoxNovel",
-			//"en/CreativeNovels",
-			"en/FastNovel" to LUA, //-- line 54, nil
-			//"en/Foxaholic", //Needs to use ajax to get chapters, Investigate `action=manga_get_chapters&manga=######`
-			//"en/KissLightNovels",
-			//"en/MNovelFree", //Doesn't seem to be a novelfull
-			//"en/MTLNovel",
-			//"en/NovelFull",
-			//"en/NovelTrench", // --:70 attempt to concatenate string and boolean
-			//"en/ReadNovelForLife", // Ded site
-			//"en/ReadNovelFull", // Meta offset issue?
-			//"en/VipNovel",
-			//"en/VolareNovels",
-			//"en/WuxiaWorld",
-			//"jp/Syosetsu",
-			//"pt/SaikaiScan", -- Removed search query
-			//"zn/15doc",
-			//"zn/Tangsanshu"
-			//"en/FastNovel" to KTS
+		//"en/BestLightNovel",
+		//"en/BoxNovel",
+		//"en/CreativeNovels",
+		//"en/FastNovel" to LUA, //-- line 54, nil
+		//"en/Foxaholic", //Needs to use ajax to get chapters, Investigate `action=manga_get_chapters&manga=######`
+		//"en/KissLightNovels",
+		//"en/MNovelFree", //Doesn't seem to be a novelfull
+		//"en/MTLNovel",
+		//"en/NovelFull",
+		//"en/NovelTrench", // --:70 attempt to concatenate string and boolean
+		//"en/ReadNovelForLife", // Ded site
+		//"en/ReadNovelFull", // Meta offset issue?
+		//"en/VipNovel",
+		//"en/VolareNovels",
+		//"en/WuxiaWorld",
+		//"jp/Syosetsu",
+		//"pt/SaikaiScan", -- Removed search query
+		//"zn/15doc",
+		//"zn/Tangsanshu"
+		"en/FastNovel" to KTS
 	).map {
 		"src/main/resources/src/${it.first}.${it.second.name.toLowerCase()}" to it.second
 	}
@@ -122,7 +124,7 @@ object Test {
 					it.filters.printOut(indent + 1)
 				}
 				is Filter.Group<*> -> {
-					it.filters.map { it as Filter<*> }.toTypedArray().printOut(indent + 1)
+					it.filters.map { it }.toTypedArray().printOut(indent + 1)
 				}
 				else -> {
 				}
@@ -130,18 +132,25 @@ object Test {
 		}
 	}
 
+	@ExperimentalTime
 	@JvmStatic
 	@Throws(java.io.IOException::class, InterruptedException::class)
 	fun main(args: Array<String>) {
 		try {
-			ShosetsuLuaLib.libLoader = { loadScript(File("src/main/resources/lib/$it.lua")) }
-			ShosetsuSharedLib.httpClient = OkHttpClient.Builder().addInterceptor {
-				it.proceed(it.request().also { request -> println(request.url.toUrl().toString()) })
-			}.build()
+			ShosetsuLuaLib.libLoader =
+				{ loadScript(File("src/main/resources/lib/$it.lua")) }
+			ShosetsuSharedLib.httpClient =
+				OkHttpClient.Builder().addInterceptor {
+					it.proceed(
+						it.request().also { request ->
+							println(
+								request.url.toUrl().toString()
+							)
+						})
+				}.build()
 
 			for ((format, type) in SOURCES) {
 				println("\n\n========== $format ==========")
-				val startTime = System.currentTimeMillis()
 
 				val formatter: IExtension = when (type) {
 					KTS -> KtsExtension(File(format))
@@ -153,7 +162,6 @@ object Test {
 					it.printOut()
 				}.mapify()
 
-				println(System.currentTimeMillis() - startTime)
 
 				val searchFiltersModel: Map<Int, *> = formatter.searchFiltersModel.also {
 					println("SearchFilters Model:")
@@ -170,9 +178,9 @@ object Test {
 					with(l) {
 						println("\n-------- Listing \"${name}\" ${if (isIncrementing) "(incrementing)" else ""} --------")
 						var novels = getListing(
-								HashMap(searchFiltersModel).apply {
-									this[PAGE_INDEX] = if (isIncrementing) 1 else null
-								}
+							HashMap(searchFiltersModel).apply {
+								this[PAGE_INDEX] = if (isIncrementing) 1 else null
+							}
 						)
 
 						if (isIncrementing)
@@ -192,23 +200,23 @@ object Test {
 				if (formatter.hasSearch) {
 					println("\n-------- Search --------")
 					showListing(
-							formatter,
-							formatter.search(
-									HashMap(searchFiltersModel).apply {
-										set(QUERY_INDEX, SEARCH_VALUE)
-										set(PAGE_INDEX, 0)
-									}
-							)
+						formatter,
+						formatter.search(
+							HashMap(searchFiltersModel).apply {
+								set(QUERY_INDEX, SEARCH_VALUE)
+								set(PAGE_INDEX, 0)
+							}
+						)
 					)
 					if (formatter.isSearchIncrementing) {
 						showListing(
-								formatter,
-								formatter.search(
-										HashMap(searchFiltersModel).apply {
-											set(QUERY_INDEX, SEARCH_VALUE)
-											set(PAGE_INDEX, 2)
-										}
-								)
+							formatter,
+							formatter.search(
+								HashMap(searchFiltersModel).apply {
+									set(QUERY_INDEX, SEARCH_VALUE)
+									set(PAGE_INDEX, 2)
+								}
+							)
 						)
 					}
 				}
